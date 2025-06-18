@@ -7,7 +7,7 @@ app = Flask(__name__)
 logger = app.logger
 
 photo_members_dict = {}
-UPLOAD_FOLDER = 'static/userData/images/'
+UPLOAD_FOLDER = 'static/user-data/images/'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
@@ -26,7 +26,7 @@ def index():
     return render_template("index.html")
 
 
-@app.route('/sendNew', methods=['POST', 'GET'])
+@app.route('/send-new', methods=['POST', 'GET'])
 def createNewMember():
     if request.method == "POST":
         # param
@@ -46,13 +46,11 @@ def createNewMember():
 
         # get data
         now = datetime.datetime.now()
-        date_string = now.strftime("%Y%m%d_%H%M%S")  # Формат: ГодМесяцДень_ЧасМинутыСекунды
+        date_string = now.strftime("%Y%m%d_%H%M%S")
 
         new_filename = f"{date_string}{file_extension}"
 
-        # Очищаем имя файла (важно!)
         filename = secure_filename(new_filename)
-
         pathPhotoOnServ = os.path.join(UPLOAD_FOLDER, filename) 
         f.save(os.path.join(app.root_path, pathPhotoOnServ)) 
         # end save image
@@ -64,7 +62,7 @@ def createNewMember():
         return user_url, {'Content-Type': 'text/plain; charset=utf-8'}
 
     else:
-        return render_template("testAdd.html")
+        return render_template("test-add.html")
 
 
 @app.route('/user/<int:user_id>')
