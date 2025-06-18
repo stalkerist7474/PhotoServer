@@ -1,9 +1,12 @@
-from flask import Flask,render_template,url_for,request,redirect
+from flask import Flask,render_template,url_for,request,redirect,make_response
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 logger = app.logger
 
 photo_members_dict = {}
+UPLOAD_FOLDER = 'static/userData/images/' 
 
 
 class PhotoMember():
@@ -28,14 +31,22 @@ def index():
 @app.route('/sendNew', methods = ['POST','GET'])
 def createNewMember():
     if request.method == "POST":
+        #param
         id = int(request.form['id'])
-        pathPhotoOnServ = request.form['pathPhotoOnServ']
         textAboutMember = request.form['textAboutMember']
+
+        #save image
+        f = request.files['image']
+        pathPhotoOnServ = f'{UPLOAD_FOLDER}{secure_filename(f.filename)}'
+        f.save(pathPhotoOnServ)
+
 
         newMember = PhotoMember( id, pathPhotoOnServ, textAboutMember)
         photo_members_dict[newMember.id] = newMember
+    
+        user_url = url_for('user', id=id, _external=True)  
 
-        return redirect('/')
+        return user_url, {'Content-Type': 'text/plain; charset=utf-8'}  
 
     else:    
         return render_template("testAdd.html")
@@ -47,3 +58,7 @@ def show_user_profile(user_id):
         return render_template('user.html', member=member)
     else:
         return redirect('/')
+    
+
+def loadImage():
+    pass

@@ -15,9 +15,9 @@ Post on form
 
 <div class="container mt-5">
     <h2 class="text-center">Test send POST</h2>
-    <form method="post">
-        <input type="int" name="id" id="id" class="form-control" placeholder="id"><br>
-        <textarea name="pathPhotoOnServ" id="pathPhotoOnServ" class="form-control" placeholder="pathPhotoOnServ"></textarea><br>
+    <form method="post" enctype="multipart/form-data">
+        <input type="int" name="id" id="id" class="form-control" placeholder="id" ><br>
+        <input type="file" name="image" id="image" class="form-control" placeholder="image"><br>
         <textarea name="textAboutMember" id="textAboutMember" class="form-control" placeholder="textAboutMember"></textarea><br>
         <input type="submit" class="btn btn-success" value="send post">
     </form>
