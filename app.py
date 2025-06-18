@@ -1,6 +1,7 @@
 from flask import Flask, render_template, url_for, request, redirect,abort
 from werkzeug.utils import secure_filename
 import os
+import datetime
 
 app = Flask(__name__)
 logger = app.logger
@@ -39,15 +40,27 @@ def createNewMember():
         # save image
 
         f = request.files['image']
-            
-        filename = secure_filename(f.filename)  # Sanitize filename
-        pathPhotoOnServ = os.path.join(UPLOAD_FOLDER, filename) # правильное создание пути
-        f.save(os.path.join(app.root_path, pathPhotoOnServ)) # правильный save
-            
-        newMember = PhotoMember(member_id, pathPhotoOnServ, textAboutMember) #  Use correct member_id
+
+        # get format
+        file_extension = os.path.splitext(f.filename)[1]  # e.g., ".jpg" or ".png"
+
+        # get data
+        now = datetime.datetime.now()
+        date_string = now.strftime("%Y%m%d_%H%M%S")  # Формат: ГодМесяцДень_ЧасМинутыСекунды
+
+        new_filename = f"{date_string}{file_extension}"
+
+        # Очищаем имя файла (важно!)
+        filename = secure_filename(new_filename)
+
+        pathPhotoOnServ = os.path.join(UPLOAD_FOLDER, filename) 
+        f.save(os.path.join(app.root_path, pathPhotoOnServ)) 
+        # end save image
+
+        newMember = PhotoMember(member_id, pathPhotoOnServ, textAboutMember) 
         photo_members_dict[newMember.id] = newMember
 
-        user_url = url_for('show_user_profile', user_id=member_id, _external=True) # Correct function name, id parameter
+        user_url = url_for('show_user_profile', user_id=member_id, _external=True) 
         return user_url, {'Content-Type': 'text/plain; charset=utf-8'}
 
     else:
@@ -61,7 +74,7 @@ def show_user_profile(user_id):
     if not member:
             abort(404)
 
-    if member is not None:
+    else:
         return render_template('user.html', member=member)
 
 
