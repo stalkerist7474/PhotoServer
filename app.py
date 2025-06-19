@@ -3,12 +3,18 @@ from werkzeug.utils import secure_filename
 import os
 import datetime
 
-app = Flask(__name__)
-logger = app.logger
-
 photo_members_dict = {}
 UPLOAD_FOLDER = 'static/user-data/images/'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+#def create_app(testing: bool = True):
+app = Flask(__name__)
+logger = app.logger
+
+@app.route('/')
+def index():
+    return render_template("index.html")
+
 
 
 class PhotoMember():
@@ -21,9 +27,6 @@ class PhotoMember():
         return f"PhotoMember(id={self.id}, pathPhotoOnServ='{self.pathPhotoOnServ}', textAboutMember='{self.textAboutMember}')"
 
 
-@app.route('/')
-def index():
-    return render_template("index.html")
 
 
 @app.route('/send-new', methods=['POST', 'GET'])
@@ -87,4 +90,5 @@ def error404(error):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0')
+    #serve(app, host='0.0.0.0', port=5000)
