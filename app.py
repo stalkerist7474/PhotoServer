@@ -2,14 +2,16 @@ from flask import Flask, render_template, url_for, request, redirect,abort
 from werkzeug.utils import secure_filename
 import os
 import datetime
+import logging
 
-photo_members_dict = {}
+
 UPLOAD_FOLDER = 'static/user-data/images/'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 #def create_app(testing: bool = True):
 app = Flask(__name__)
 logger = app.logger
+app.logger.setLevel(logging.DEBUG)
 
 @app.route('/')
 def index():
@@ -17,28 +19,9 @@ def index():
 
 
 
-class PhotoMember():
-    def __init__(self, id=0, pathPhotoOnServ="defaultPath", textAboutMember="InfoText"):
-        self.id = id
-        self.pathPhotoOnServ = pathPhotoOnServ
-        self.textAboutMember = textAboutMember
-
-    def __str__(self):
-        return f"PhotoMember(id={self.id}, pathPhotoOnServ='{self.pathPhotoOnServ}', textAboutMember='{self.textAboutMember}')"
-
-
-
-
 @app.route('/send-new', methods=['POST', 'GET'])
 def createNewMember():
-    if request.method == "POST":
-        # param
-        
-        member_id = int(request.form.get('id'))
-        if not member_id:
-            abort(404)
-
-        textAboutMember = request.form['textAboutMember']
+    if request.method == "POST":   
 
         # save image
 
@@ -49,7 +32,7 @@ def createNewMember():
 
         # get data
         now = datetime.datetime.now()
-        date_string = now.strftime("%Y%m%d_%H%M%S")
+        date_string = now.strftime("%Y%m%d%H%M%S")
 
         new_filename = f"{date_string}{file_extension}"
 
@@ -58,10 +41,10 @@ def createNewMember():
         f.save(os.path.join(app.root_path, pathPhotoOnServ)) 
         # end save image
 
-        newMember = PhotoMember(member_id, pathPhotoOnServ, textAboutMember) 
-        photo_members_dict[newMember.id] = newMember
+        user_url = url_for('show_user_profile', user_id=date_string, _external=True) 
 
-        user_url = url_for('show_user_profile', user_id=member_id, _external=True) 
+        app.logger.info('date_string: %s', date_string)
+
         return user_url, {'Content-Type': 'text/plain; charset=utf-8'}
 
     else:
@@ -70,18 +53,25 @@ def createNewMember():
 
 @app.route('/user/<int:user_id>')
 def show_user_profile(user_id):
-    member = photo_members_dict.get(user_id)
 
-    if not member:
+    fileName = f"{user_id}{".jpg"}"
+    imageFilePath = find_file_by_name(UPLOAD_FOLDER,fileName)
+
+    logger.debug(imageFilePath)
+
+    if imageFilePath == None:
             abort(404)
 
     else:
-        return render_template('user.html', member=member)
+        return render_template('user.html', member=imageFilePath)
 
 
+def find_file_by_name(directory, filename):
+    for root, _, files in os.walk(directory):
+        if filename in files:
+            return os.path.join(root, filename)
 
-def loadImage():
-    pass
+    return None 
 
 
 @app.errorhandler(404)
@@ -90,4 +80,4 @@ def error404(error):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=8000, debug=True)
