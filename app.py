@@ -13,6 +13,8 @@ app = Flask(__name__)
 logger = app.logger
 app.logger.setLevel(logging.DEBUG)
 
+
+
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -51,19 +53,34 @@ def createNewMember():
         return render_template("test-add.html")
 
 
+
 @app.route('/user/<int:user_id>')
 def show_user_profile(user_id):
 
-    fileName = f"{user_id}{".jpg"}"
-    imageFilePath = find_file_by_name(UPLOAD_FOLDER,fileName)
-
-    logger.debug(imageFilePath)
+    imageFilePath = find_file_by_name_without_extension(UPLOAD_FOLDER,user_id)
+    app.logger.info('imageFilePath: %s', imageFilePath)
 
     if imageFilePath == None:
             abort(404)
 
     else:
         return render_template('user.html', member=imageFilePath)
+
+
+
+def find_file_by_name_without_extension(directory, filename_without_extension):
+
+    if not os.path.exists(UPLOAD_FOLDER):
+        app.logger.error('directory no found: %s', directory)
+        return None
+            
+    for name in os.listdir(directory):
+        if str(filename_without_extension) in name:
+            app.logger.info('found: %s', name)
+            return find_file_by_name(directory,name)
+
+    return None
+
 
 
 def find_file_by_name(directory, filename):
@@ -74,9 +91,11 @@ def find_file_by_name(directory, filename):
     return None 
 
 
+
 @app.errorhandler(404)
 def error404(error):
     return render_template("404.html"), 404
+
 
 
 if __name__ == '__main__':
