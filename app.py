@@ -3,94 +3,74 @@ from werkzeug.utils import secure_filename
 import os
 import datetime
 import logging
+from PIL import Image
 
 
 UPLOAD_FOLDER = 'static/user-data/images/'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-#def create_app(testing: bool = True):
 app = Flask(__name__)
 logger = app.logger
 app.logger.setLevel(logging.DEBUG)
 
 
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
     return render_template("index.html")
 
 
 
-@app.route('/send-new', methods=['POST', 'GET'])
-def createNewMember():
+@app.route('/send-new/', methods=['POST', 'GET'])
+def create_new_member():
     if request.method == "POST":   
+        image = request.files.get('image')
 
-        # save image
-
-        f = request.files['image']
-
-        # get format
-        file_extension = os.path.splitext(f.filename)[1]  # e.g., ".jpg" or ".png"
-
-        # get data
+        if image == None:
+            abort(404)
+    
         now = datetime.datetime.now()
         date_string = now.strftime("%Y%m%d%H%M%S")
+        convert_and_save_jpeg(image, date_string )
 
-        new_filename = f"{date_string}{file_extension}"
-
-        filename = secure_filename(new_filename)
-        pathPhotoOnServ = os.path.join(UPLOAD_FOLDER, filename) 
-        f.save(os.path.join(app.root_path, pathPhotoOnServ)) 
-        # end save image
-
-        user_url = url_for('show_user_profile', user_id=date_string, _external=True) 
-
-        app.logger.info('date_string: %s', date_string)
-
+        user_url = url_for('show_user_profile', user_id=date_string, _external=True)        
+        app.logger.info(f'date_string: {date_string}')
         return user_url, {'Content-Type': 'text/plain; charset=utf-8'}
-
     else:
         return render_template("test-add.html")
 
 
 
-@app.route('/user/<int:user_id>')
+@app.route('/user/<int:user_id>/')
 def show_user_profile(user_id):
 
-    imageFilePath = find_file_by_name_without_extension(UPLOAD_FOLDER,user_id)
-    app.logger.info('imageFilePath: %s', imageFilePath)
+    name_file = f'{user_id}.jpeg'
+    path = f'{UPLOAD_FOLDER}{name_file}'
 
-    if imageFilePath == None:
-            abort(404)
-
-    else:
-        return render_template('user.html', member=imageFilePath)
-
-
-
-def find_file_by_name_without_extension(directory, filename_without_extension):
-
-    if not os.path.exists(UPLOAD_FOLDER):
-        app.logger.error('directory no found: %s', directory)
+    #No file
+    if not os.path.exists(path):
+        app.logger.error(f'directory no found: {path}')
+        abort(404)
         return None
-            
-    for name in os.listdir(directory):
-        if str(filename_without_extension) in name:
-            app.logger.info('found: %s', name)
-            return find_file_by_name(directory,name)
 
-    return None
+    #Yes file
+    else:
+        app.logger.info(f'imageFilePath: {path}' )
+        return render_template('user.html', member=path)
 
 
+def convert_and_save_jpeg(image_data, new_name):
+    
+    img = Image.open(image_data)
+    if img.mode != "RGB":
+        img = img.convert("RGB")
 
-def find_file_by_name(directory, filename):
-    for root, _, files in os.walk(directory):
-        if filename in files:
-            return os.path.join(root, filename)
+    filename = str(new_name) + ".jpeg"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    img.save(filepath, "JPEG")
 
-    return None 
-
-
+    return filename
+      
 
 @app.errorhandler(404)
 def error404(error):
